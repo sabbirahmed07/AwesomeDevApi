@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 const path = require('path');
+const cors = require('cors'); // Import the cors package
 
 const users = require('./routes/api/users');
 const profile = require('./routes/api/profile');
@@ -10,7 +11,7 @@ const posts = require('./routes/api/posts');
 
 const app = express();
 
-//Body parser middleware
+// Body parser middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
@@ -23,20 +24,35 @@ mongoose
   .then(() => console.log('MongoDB Connected'))
   .catch((err) => console.log(err));
 
-//Passport middleware
+// Passport middleware
 app.use(passport.initialize());
 
-//Passport config
+// Passport config
 require('./config/passport')(passport);
+
+// Configure CORS to allow requests from a specific origin
+const allowedOrigins = ['https://awesomedevs.onrender.com'];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+};
+
+app.use(cors(corsOptions));
 
 // Use Routes
 app.use('/api/users', users);
 app.use('/api/profile', profile);
 app.use('/api/posts', posts);
 
-//server static assets if in production
+// Serve static assets if in production
 if (process.env.NODE_ENV === 'production') {
-  //set static folder
+  // Set static folder
   app.use(express.static('client/build'));
 
   app.get('*', (req, res) => {
